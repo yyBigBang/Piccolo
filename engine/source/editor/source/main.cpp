@@ -1,10 +1,12 @@
+#include <filesystem>
 #include <iostream>
 #include <string>
 #include <thread>
 #include <unordered_map>
 
-#include "editor/include/editor.h"
 #include "runtime/engine.h"
+
+#include "editor/include/editor.h"
 
 // https://gcc.gnu.org/onlinedocs/cpp/Stringizing.html
 #define PILOT_XSTR(s) PILOT_STR(s)
@@ -12,23 +14,23 @@
 
 int main(int argc, char** argv)
 {
-    std::filesystem::path pilot_root_folder = std::filesystem::path(PILOT_XSTR(PILOT_ROOT_DIR));
+    std::filesystem::path executable_path(argv[0]);
+    std::filesystem::path config_file_path = executable_path.parent_path() / "PilotEditor.ini";
 
-    Pilot::EngineInitParams params;
-    params.m_root_folder      = pilot_root_folder;
-    params.m_config_file_path = pilot_root_folder / "PilotEditor.ini";
+    Pilot::PilotEngine* engine = new Pilot::PilotEngine();
 
-    Pilot::PilotEngine::getInstance().startEngine(params);
-    Pilot::PilotEngine::getInstance().initialize();
+    engine->startEngine(config_file_path.generic_string());
+    engine->initialize();
 
-    Pilot::PilotEditor::getInstance().initialize(&(Pilot::PilotEngine::getInstance()));
+    Pilot::PilotEditor* editor = new Pilot::PilotEditor();
+    editor->initialize(engine);
 
-    Pilot::PilotEditor::getInstance().run();
+    editor->run();
 
-    Pilot::PilotEditor::getInstance().clear();
+    editor->clear();
 
-    Pilot::PilotEngine::getInstance().clear();
-    Pilot::PilotEngine::getInstance().shutdownEngine();
+    engine->clear();
+    engine->shutdownEngine();
 
     return 0;
 }

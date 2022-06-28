@@ -1,15 +1,17 @@
 #include "runtime/resource/config_manager/config_manager.h"
 
+#include "runtime/engine.h"
+
+#include <filesystem>
 #include <fstream>
 #include <string>
 
 namespace Pilot
 {
-    void ConfigManager::initialize(const EngineInitParams& init_param)
+    void ConfigManager::initialize(const std::filesystem::path& config_file_path)
     {
-        m_root_folder = init_param.m_root_folder;
         // read configs
-        std::ifstream config_file(init_param.m_config_file_path);
+        std::ifstream config_file(config_file_path);
         std::string   config_line;
         while (std::getline(config_file, config_line))
         {
@@ -18,7 +20,11 @@ namespace Pilot
             {
                 std::string name  = config_line.substr(0, seperate_pos);
                 std::string value = config_line.substr(seperate_pos + 1, config_line.length() - seperate_pos - 1);
-                if (name == "AssetFolder")
+                if (name == "BinaryRootFolder")
+                {
+                    m_root_folder = config_file_path.parent_path() / value;
+                }
+                else if (name == "AssetFolder")
                 {
                     m_asset_folder = m_root_folder / value;
                 }
@@ -46,16 +52,14 @@ namespace Pilot
                 {
                     m_global_rendering_res_url = value;
                 }
+#ifdef ENABLE_PHYSICS_DEBUG_RENDERER
+                else if (name == "JoltAssetFolder")
+                {
+                    m_jolt_physics_asset_folder = m_root_folder / value;
+                }
+#endif
             }
         }
-    }
-
-    void ConfigManager::clear()
-    {
-        m_root_folder.clear();
-        m_asset_folder.clear();
-        m_schema_folder.clear();
-        m_default_world_url.clear();
     }
 
     const std::filesystem::path& ConfigManager::getRootFolder() const { return m_root_folder; }
@@ -73,4 +77,9 @@ namespace Pilot
     const std::string& ConfigManager::getDefaultWorldUrl() const { return m_default_world_url; }
 
     const std::string& ConfigManager::getGlobalRenderingResUrl() const { return m_global_rendering_res_url; }
+
+#ifdef ENABLE_PHYSICS_DEBUG_RENDERER
+    const std::filesystem::path& ConfigManager::getJoltPhysicsAssetFolder() const { return m_jolt_physics_asset_folder; }
+#endif
+
 } // namespace Pilot
